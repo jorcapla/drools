@@ -1,0 +1,84 @@
+package com.myspace.kbs_happydonia;
+
+import com.myspace.kbs_happydonia.communicationstrategygoals.*;
+import com.myspace.kbs_happydonia.communicationstrategyissues.*;
+
+rule "goal: Difusion"
+when
+    $cs: CommunicationStrategy( goal == "Difusion", goalAchieved != true)
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("goal: difussion");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new Difusion($cs.getId()));
+end
+
+rule "goal: Justification"
+when
+    $cs: CommunicationStrategy( goal == "Justification", goalAchieved != true )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("Goal: justification");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new Justification($cs.getId()));
+end
+
+rule "goal: Conversion"
+when
+    $cs: CommunicationStrategy( goal == "Conversion", goalAchieved != true )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("Goal: conversion");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new Conversion($cs.getId()));
+end
+
+rule "goal: Fidelization"
+when
+    $cs: CommunicationStrategy( goal == "Fidelization", goalAchieved != true )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("goal: fidelization");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new Fidelization($cs.getId()));
+end
+
+rule "wrong goal: early Justification"
+when
+    $cs: CommunicationStrategy( planStrategyNumber < 3 )
+    Justification( communicationStrategyId == $cs.getId() )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("wrong goal: early justification");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new GoalIssue("early Justification", $cs.getId()));
+end
+
+rule "wrong goal: early Conversion"
+when
+    $cs: CommunicationStrategy( planStrategyNumber < 5 )
+    Conversion( communicationStrategyId == $cs.getId() )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("wrong goal: early conversion");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new GoalIssue("early Conversion", $cs.getId()));
+end
+
+rule "wrong goal: early Fidelization"
+when
+    $cs: CommunicationStrategy( planStrategyNumber < 7 )
+    Fidelization( communicationStrategyId == $cs.getId() )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("Wrong goal, early justification");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new GoalIssue("early Fidelization", $cs.getId()));
+end

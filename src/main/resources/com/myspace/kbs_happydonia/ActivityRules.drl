@@ -1,0 +1,44 @@
+package com.myspace.kbs_happydonia;
+
+import com.myspace.kbs_happydonia.activityissues.*;
+import com.myspace.kbs_happydonia.communicationstrategyissues.*;
+import java.util.*;
+
+rule "no activities to process"
+when
+    $cs: CommunicationStrategy( activityList != null)
+    $a: Activity( communicationStrategyId == $cs.getId() )
+    not Activity( communicationStrategyId == $cs.getId(), processed == false )
+then
+end
+
+rule "set views less than MVA"
+when
+    $cs: CommunicationStrategy()
+    $a: Activity( communicationStrategyId == $cs.getId(), views < $cs.getMva(), processed != true )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("set views less than MVA");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+    
+    insert( new LowAudienceIssue($a.getId(), $cs.getId()));
+    modify($a){
+        setProcessed(true);
+    }
+end
+
+rule "set low reaction level"
+when
+    $cs: CommunicationStrategy()
+    $a: Activity( communicationStrategyId == $cs.getId(), reactions < $cs.getMva()*$cs.getConversionRate(), processed != true )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("set low reaction level");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert( new LowReactionIssue($a.getId(), $cs.getId()) );
+    modify($a){
+        setProcessed(true);
+    }
+end
+

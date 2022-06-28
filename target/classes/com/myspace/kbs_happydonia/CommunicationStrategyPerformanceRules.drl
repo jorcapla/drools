@@ -1,0 +1,116 @@
+package com.myspace.kbs_happydonia;
+
+import com.myspace.kbs_happydonia.activityissues.*;
+import com.myspace.kbs_happydonia.communicationstrategyissues.*;
+import java.util.*;
+
+rule "extract activities"
+when
+    $cs: CommunicationStrategy(activityList != null)
+    not Activity(communicationStrategyId == $cs.getId)
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("extract activities");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    for(int i = 0; i < $cs.getActivityList().size(); i++){
+        insert( $cs.getActivityList().get(i) );
+    }
+end
+
+rule "set low overall views" extends "no activities to process"
+when
+    $l: List() from collect(LowAudienceIssue( communicationStrategyId == $cs.getId() ))
+    eval($l.size() > $cs.getActivityList().size()/3)
+    not LowOverallViews(communicationStrategyId == $cs.getId())
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("set low overall views");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new LowOverallViews($cs.getId()));
+end
+
+rule "set low overall reactions" extends "no activities to process"
+when
+    $l: List() from collect(LowReactionIssue( communicationStrategyId == $cs.getId() ))
+    eval($l.size() > $cs.getActivityList().size()/3)
+    not LowOverallReactions(communicationStrategyId == $cs.getId())
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("set low overall reactions");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert(new LowOverallReactions($cs.getId()));
+end
+
+rule "Difusion failed" extends "no activities to process"
+when
+    Difusion(communicationStrategyId == $cs.getId())
+    LowOverallViews(communicationStrategyId == $cs.getId())
+    not DifussionIssue(communicationStrategyId == $cs.getId())
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("difussion failed");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+   insert(new DifussionIssue($cs.getId()));
+end
+
+rule "Difusion achieved"
+salience -1
+when
+    $cs: CommunicationStrategy()
+    Difusion(communicationStrategyId == $cs.getId())
+    not DifussionIssue( communicationStrategyId == $cs.getId() )
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("difussion achieved");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    modify($cs){
+        setGoalAchieved(true);
+    }
+end
+
+rule "justification failed: reactions" extends "no activities to process"
+when
+    Justification(communicationStrategyId == $cs.getId())
+    LowOverallReactions(communicationStrategyId == $cs.getId())
+    not JustificationIssue(communicationStrategyId == $cs.getId())
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("justification failed: reactions");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert( new JustificationIssue($cs.getId(), "reactions") );
+end
+
+rule "justification failed: views" extends "no activities to process"
+when
+    Justification(communicationStrategyId == $cs.getId())
+    LowOverallViews(communicationStrategyId == $cs.getId())
+    not JustificationIssue(communicationStrategyId == $cs.getId())
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("justification failed: views");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    insert( new JustificationIssue($cs.getId(), "views") );
+end
+
+rule "Justification achieved"
+salience -1
+when
+    $cs: CommunicationStrategy()
+    Justification(communicationStrategyId == $cs.getId())
+    not JustificationIssue(communicationStrategyId == $cs.getId())
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("logger");
+    log.add("justification achieved");
+    drools.getKnowledgeRuntime().setGlobal("logger", log);
+
+    modify($cs){
+        setGoalAchieved(true);
+    }
+end

@@ -1,0 +1,18 @@
+package com.myspace.kbs_happydonia;
+
+import java.util.*;
+
+global List<String> logger;
+global List<String> suggestions;
+
+rule "init"
+salience 100
+when
+    $csp: CommunicationPlan()
+then
+    drools.getKnowledgeRuntime().setGlobal("suggestions", new ArrayList<String>());
+    drools.getKnowledgeRuntime().setGlobal("logger", new ArrayList<String>());
+    for(int i = 0; i< $csp.getCommunicationStrategyList().size(); i++){
+        insert($csp.getCommunicationStrategyList().get(i));
+    }
+end

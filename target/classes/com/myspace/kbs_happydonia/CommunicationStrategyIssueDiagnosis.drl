@@ -1,0 +1,92 @@
+package com.myspace.kbs_happydonia;
+
+import com.myspace.kbs_happydonia.communicationstrategyissues.*;
+import com.myspace.kbs_happydonia.communicationstrategygoals.*;
+
+import java.util.*;
+
+rule "Difussion issue for CS"
+when
+    $di: DifussionIssue()
+then
+end
+
+rule "Justification issue for CS"
+when
+    $ji: JustificationIssue()
+then
+end
+
+rule "wrong format: difusion" extends "Difussion issue for CS"
+when
+    $cs: CommunicationStrategy(id == $di.getCommunicationStrategyId())
+    exists Activity(communicationStrategyId == $cs.getId(), contentType memberOf ["post", "poll", "event"])
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("difussion format must be viralizable");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "wrong format: justification" extends "Justification issue for CS"
+when
+    $cs: CommunicationStrategy(id == $ji.getCommunicationStrategyId())
+    exists Activity(communicationStrategyId == $cs.getId(), contentType memberOf ["poll", "event"])
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("justification format must be explainatory");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "wrong goal justification"
+when
+    $cs: CommunicationStrategy()
+    GoalIssue(type == "early Justification", communicationStrategyId == $cs.getId())
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("communication plans must start by acquiring the MVA");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "wrong planification: difusion" extends "Difussion issue for CS"
+when
+    $cs: CommunicationStrategy(id == $di.getCommunicationStrategyId())
+    eval($cs.getPlanification().size() <= 3)
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("communication strategies that aim for difusion must publish a lot");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "wrong planification: justification" extends "Justification issue for CS"
+when
+    $cs: CommunicationStrategy(id == $ji.getCommunicationStrategyId())
+    eval($cs.getPlanification().size() > 3)
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("communication strategies for justification must leave time for the user to understand what has been said");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "wrong content writting: Difussion" extends "Difussion issue for CS"
+when
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("For difussion, headlines must catch attention and so must do the catch-frase");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "wrong content writting: Justification" extends "Justification issue for CS"
+when
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("For justification, headlines must catch attention, there must be only one focus point and some images or diagrams to support the idea");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "wrong topic: Difussion" extends "Difussion issue for CS"
+when
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("your audience may not like this topic. try another");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end

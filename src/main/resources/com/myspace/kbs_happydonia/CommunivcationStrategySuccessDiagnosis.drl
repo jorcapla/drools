@@ -1,0 +1,33 @@
+package com.myspace.kbs_happydonia;
+
+import com.myspace.kbs_happydonia.communicationstrategyissues.*;
+import com.myspace.kbs_happydonia.communicationstrategygoals.*;
+
+import java.util.*;
+
+rule "collect success"
+when
+    $cp: CommunicationPlan()
+    $cs: CommunicationStrategy(goalAchieved == true, communicationPlanId == $cp.getId())
+    $l: List() from collect(CommunicationStrategy( communicationPlanId == $cs.getCommunicationPlanId(), goal == $cs.getGoal(), goalAchieved == true ))
+    not CommunicationStrategy( id > $cs.getId() ) from $cp.getCommunicationStrategyList()
+then
+end
+
+rule "2 or more success in a row" extends "collect success"
+when
+    eval($l.size() >= 2)
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("Create a Justification communication strategy of the same topic, with 3 publication days.");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
+
+rule "less than 2 success in a row" extends "collect success"
+when
+    eval($l.size() < 2)
+then
+    List<String> log = (List<String>)drools.getKnowledgeRuntime().getGlobal("suggestions");
+    log.add("Create another difussion communication strategy with the same parameters to loyalty your audience.");
+    drools.getKnowledgeRuntime().setGlobal("suggestions", log);
+end
